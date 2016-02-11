@@ -18,7 +18,7 @@ RED =   255,   0,   0
 #Value definitions
 angle = 0
 anglerad = math.radians(angle)
-scalemin = 20
+scalemin = 30
 
 
 class Ship(): #Overall Ship data and actions
@@ -32,6 +32,14 @@ class Ship(): #Overall Ship data and actions
             part = Part(part)
             part_info = part, follow
             self.ship.append (part_info)
+        elif part == "splitter":
+            for i in range (1,3):
+                name = "split_"+str(i)
+                part = Splitter(name)
+                part_info = part,follow
+                self.ship.append(part_info)
+                follow_num = len(self.ship) -1
+                follow = ship.ship[follow_num][0]
         else:
             print ("part not regognized") 
         
@@ -51,14 +59,13 @@ class Ship(): #Overall Ship data and actions
             x_list.append(temp_part.imagerect.right)
             y_list.append(temp_part.imagerect.top)
             y_list.append(temp_part.imagerect.bottom)
-        pygame.display.update(min(x_list),      #updates only the ship
-            min(y_list),max(x_list),max(y_list))
+        pygame.display.update(min(x_list)-scalemin,      #updates only the ship
+            min(y_list)-scalemin,max(x_list)+scalemin,
+            max(y_list)+scalemin)
         
 class Capsule():    #Capsule class
     
     def __init__(self):
-        self.x = 200
-        self.y = 200
         self.image = pygame.image.load("MSP_capsule.png").convert()
         self.speed = [1,1]
     def draw(self,x):
@@ -73,12 +80,12 @@ class Capsule():    #Capsule class
         
         screen.blit(imageafter,self.imagerect)
 
-        print("SLOW DOWN")
+        #print("SLOW DOWN")
     
 class Center_of_mass(): #Center of mass, currently stagnent
     def __init__(self):
-        self.x = 200
-        self.y = 200
+        self.x = 500
+        self.y = 300
         
 class Part(): #Class for a part attached to botom
 
@@ -122,7 +129,73 @@ class Part(): #Class for a part attached to botom
         
         #blit the image
         screen.blit(imageafter,self.imagerect)
+
+class Splitter():
+    def __init__(self,part):
+        self.third = part[-1]
+        if part == "split_1":
+            self.image = "MSP_split_1.png"
+        if part == "split_2":
+            self.image = "MSP_split_2.png"
+        if part == "split_3":
+            self.image = "MSP_split_3.png"
+        print(part, "initialized")
+    def draw(self, follow):
+        follow_x = follow.x
+        follow_y = follow.y
+             
+        div_scale = scalemin/50 #changes scale for calculations
+
+        a = follow_x + math.fabs(10*div_scale*math.sin(2*anglerad))+(25*div_scale) 
+        d = follow_y + math.fabs(10*div_scale*math.sin(2*anglerad))+(25*div_scale)
         
+        b_1 = math.sin(anglerad+(math.pi*7/4))*(35*div_scale)
+        b_2 = math.sin(anglerad+(math.pi*3/4))*(35*div_scale)
+
+        e_1 = math.cos(anglerad+(math.pi*7/4))*(35*div_scale)
+        e_2 = math.cos(anglerad+(math.pi*3/4))*(35*div_scale)
+
+        bottom_left_x= a+b_1
+        bottom_right_x= a + b_2
+        
+
+        bottom_left_y= d+e_1
+        bottom_right_y= d+e_2
+        
+        
+        new_b_1 = math.cos(anglerad+(math.pi*1/4))*(35*div_scale)
+        new_b_2 = math.cos(anglerad+(math.pi*5/4))*(35*div_scale)
+
+        new_e_1 = math.sin(anglerad+(math.pi*1/4))*(35*div_scale)
+        new_e_2 = math.sin(anglerad+(math.pi*5/4))*(35*div_scale)
+
+        new_a_1= bottom_left_x + new_b_2
+        new_a_2= bottom_left_x + new_b_1
+        new_a_3= bottom_right_x + new_b_1
+
+        new_d_1= bottom_left_y + new_e_1
+        new_d_2= bottom_left_y + new_e_1
+        new_d_3= bottom_right_y + new_e_2
+        
+        if self.third == "1":
+            self.x = new_a_1 -math.fabs(10*div_scale*math.sin(2*anglerad)) -(25*div_scale)
+            self.y = new_d_1 -math.fabs(10*div_scale*math.sin(2*anglerad)) -(25*div_scale)
+        if self.third == "2":
+            self.x = new_a_2 -math.fabs(10*div_scale*math.sin(2*anglerad)) -(25*div_scale)
+            self.y = new_d_2 -math.fabs(10*div_scale*math.sin(2*anglerad)) -(25*div_scale)
+        if self.third == "3":
+            self.x = new_a_3 -math.fabs(10*div_scale*math.sin(2*anglerad)) -(25*div_scale)
+            self.y = new_d_3 -math.fabs(10*div_scale*math.sin(2*anglerad)) -(25*div_scale)
+        #changing image
+        imageafter = pygame.transform.rotate (self.image,angle)
+        imageafter = pygame.transform.scale (imageafter,(scale,scale))
+
+        self.imagerect = imageafter.get_rect()
+        self.imagerect = self.imagerect.move(self.x,self.y)
+        
+        #blit the image
+        screen.blit(imageafter,self.imagerect)
+
 def ship_creation(): # Builing the image
     done = False
     while done == False:
@@ -147,8 +220,10 @@ def re_white(): #blanks the area that the ship is in after every draw
         x_list.append(temp_part.imagerect.right)
         y_list.append(temp_part.imagerect.top)
         y_list.append(temp_part.imagerect.bottom)
-    screen.fill(WHITE,(min(x_list),
-            min(y_list),max(x_list),max(y_list)))
+    screen.fill(WHITE,(min(x_list)-scalemin,
+            min(y_list)-scalemin,max(x_list)+scalemin,max(y_list)+scalemin))
+    print (x_list)
+    print(y_list)
    
 #Initial order of making stuff
 capsule = Capsule()
@@ -157,16 +232,16 @@ ship = Ship()
 ship_creation()
 
 scale = int(scalemin*(math.fabs(0.4*math.sin(2*anglerad))+1)) 
-screen.fill(WHITE)
+screen.fill(BLUE)
 ship.draw()
 
 while True: #MAIN GAME LOOP
     
-    angle = angle +.5 #temp angle changing to test visuals
+    angle = angle +.25 #temp angle changing to test visuals
     
     anglerad = math.radians(angle)
-    if angle == 360: angle = 0
-    
+    if angle == 360:
+        angle = 0
     #changes the scale for rotating images 
     scale = int(scalemin*(math.fabs(0.4*math.sin(2*anglerad))+1))
     
@@ -175,7 +250,6 @@ while True: #MAIN GAME LOOP
         
     re_white()#blanks area affected
     ship.draw()# draws and updates the ship
-    pygame.display.flip() #idk this one either something about updating screen
     
     
     
