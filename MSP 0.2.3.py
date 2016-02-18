@@ -19,55 +19,95 @@ RED =   255,   0,   0
 angle = 0
 anglerad = math.radians(angle)
 scalemin = 30
-
+rotateleft = False
+rotateright = False
 
 class Ship(): #Overall Ship data and actions
     def __init__(self): 
         self.capsule_info = capsule,center_of_mass #adds capsule and center of mass
         self.ship = [self.capsule_info]
+        self.first = True
+        self.shiplength = (len(self.ship))
+        self.part_list = []
+        self.follow_list = []
+        self.open_part = []
         
-    def add (self, part, follow):   #function for adding parts to the ship
+    def add (self, part):   #function for adding parts to the ship
         print("ship.add")
-        if part == "tank" or part == "engine":
-            part = Part(part)
-            part_info = part, follow
-            self.ship.append (part_info)
-        elif part == "splitter":
-            for i in range (1,3):
-                name = "split_"+str(i)
-                part = Splitter(name)
-                part_info = part,follow
-                self.ship.append(part_info)
+        self.open_part.clear()
+        self.part_list.clear()
+        self.follow_list.clear()
+        self.shiplength = len(self.ship)
+        for i in range (self.shiplength): #generate a list of only the parts and the followed parts
+            temp_part = self.ship[i][0]
+            temp_follow = self.ship[i][1]
+            self.part_list.append(temp_part)
+            self.follow_list.append(temp_follow)
+        for i in range (self.shiplength):
+            if self.follow_list.count(self.part_list[i]) == 0:
+                if self.part_list[i].third != "2":
+                    
+                    self.open_part.append (self.part_list[i])
+        print (self.open_part)
+        for i in range (len(self.open_part)):  
+            if part == "tank" or part == "engine":
+                part_class = Part(part)
+                part_info = part_class, self.open_part[i]
+                self.ship.append (part_info)
+            elif part == "splitter":
                 follow_num = len(self.ship) -1
-                follow = ship.ship[follow_num][0]
-        else:
-            print ("part not regognized") 
+                for j in range (0,3):
+                    name = "split_"+str(j+1)
+                    part_class = Splitter(name)
+                    part_info = part_class,self.open_part[i]
+                    self.ship.append(part_info)
+                    follow = ship.ship[follow_num][0]
+                    self.open_part.append(part_info)
+            else:
+                print ("part not regognized")
+            self.open_part.append(self.ship[-1])
         
     def draw(self): #Gathers all ship parts and tells them to draw themsleves
+        
         self.shiplength = (len(self.ship))
-        x_list = []
-        y_list = []
+
         for i in range (self.shiplength):   #Finding all ship parts
             temp_part_info = self.ship[i]
             temp_part = temp_part_info[0]
             temp_follow = temp_part_info[1]
             temp_part.draw(temp_follow)
+
+    def update(self):
+        self.x_list = []
+        self.y_list = []
         for i in range (self.shiplength): #finds the furthest points of the ship
             temp_part_info = self.ship[i]
             temp_part = temp_part_info[0]
-            x_list.append(temp_part.imagerect.left)
-            x_list.append(temp_part.imagerect.right)
-            y_list.append(temp_part.imagerect.top)
-            y_list.append(temp_part.imagerect.bottom)
-        pygame.display.update(min(x_list)-scalemin,      #updates only the ship
-            min(y_list)-scalemin,max(x_list)+scalemin,
-            max(y_list)+scalemin)
+            self.x_list.append(temp_part.imagerect.left)
+            self.x_list.append(temp_part.imagerect.right)
+            self.y_list.append(temp_part.imagerect.top)
+            self.y_list.append(temp_part.imagerect.bottom)
+        pygame.display.update(min(self.x_list)-25,
+            min(self.y_list)-25,(max(self.x_list)-min(self.x_list)+50),
+            (max(self.y_list)-min(self.y_list)+50))
+
+    def re_white(self): #blanks the area that the ship is in after every draw
+        if self.first == True:
+            self.x_list = [1]
+            self.y_list = [1]
+            print(self.first)
+            self.first = False
+        screen.fill(WHITE,(min(self.x_list),
+            min(self.y_list),(max(self.x_list)-min(self.x_list)),
+            (max(self.y_list)-min(self.y_list))))
+        
         
 class Capsule():    #Capsule class
     
     def __init__(self):
         self.image = pygame.image.load("MSP_capsule.png").convert()
         self.speed = [1,1]
+        self.third = "0"
     def draw(self,x):
         self.x = x.x
         self.y = x.y
@@ -80,7 +120,6 @@ class Capsule():    #Capsule class
         
         screen.blit(imageafter,self.imagerect)
 
-        #print("SLOW DOWN")
     
 class Center_of_mass(): #Center of mass, currently stagnent
     def __init__(self):
@@ -94,6 +133,7 @@ class Part(): #Class for a part attached to botom
             self.image = pygame.image.load("MSP_fuel.png")
         if part == "engine":
             self.image = pygame.image.load("MSP_engine.png")
+        self.third = "0"
         
     def draw(self,follow):
         
@@ -134,12 +174,13 @@ class Splitter():
     def __init__(self,part):
         self.third = part[-1]
         if part == "split_1":
-            self.image = "MSP_split_1.png"
+            self.image = pygame.image.load("MSP_split_1.png")
         if part == "split_2":
-            self.image = "MSP_split_2.png"
+            self.image = pygame.image.load("MSP_split_2.png")
         if part == "split_3":
-            self.image = "MSP_split_3.png"
+            self.image = pygame.image.load("MSP_split_3.png")
         print(part, "initialized")
+        print (self.third)
     def draw(self, follow):
         follow_x = follow.x
         follow_y = follow.y
@@ -150,10 +191,10 @@ class Splitter():
         d = follow_y + math.fabs(10*div_scale*math.sin(2*anglerad))+(25*div_scale)
         
         b_1 = math.sin(anglerad+(math.pi*7/4))*(35*div_scale)
-        b_2 = math.sin(anglerad+(math.pi*3/4))*(35*div_scale)
+        b_2 = math.sin(anglerad+(math.pi*1/4))*(35*div_scale)
 
         e_1 = math.cos(anglerad+(math.pi*7/4))*(35*div_scale)
-        e_2 = math.cos(anglerad+(math.pi*3/4))*(35*div_scale)
+        e_2 = math.cos(anglerad+(math.pi*1/4))*(35*div_scale)
 
         bottom_left_x= a+b_1
         bottom_right_x= a + b_2
@@ -163,19 +204,19 @@ class Splitter():
         bottom_right_y= d+e_2
         
         
-        new_b_1 = math.cos(anglerad+(math.pi*1/4))*(35*div_scale)
-        new_b_2 = math.cos(anglerad+(math.pi*5/4))*(35*div_scale)
+        new_e_1 = math.cos(anglerad+(math.pi*1/4))*(35*div_scale)
+        new_e_2 = math.cos(anglerad+(math.pi*7/4))*(35*div_scale)
 
-        new_e_1 = math.sin(anglerad+(math.pi*1/4))*(35*div_scale)
-        new_e_2 = math.sin(anglerad+(math.pi*5/4))*(35*div_scale)
+        new_b_1 = math.sin(anglerad+(math.pi*1/4))*(35*div_scale)
+        new_b_2 = math.sin(anglerad+(math.pi*7/4))*(35*div_scale)
 
-        new_a_1= bottom_left_x + new_b_2
+        new_a_1= bottom_left_x + b_1
         new_a_2= bottom_left_x + new_b_1
-        new_a_3= bottom_right_x + new_b_1
+        new_a_3= bottom_right_x + b_2
 
-        new_d_1= bottom_left_y + new_e_1
+        new_d_1= bottom_left_y + e_1
         new_d_2= bottom_left_y + new_e_1
-        new_d_3= bottom_right_y + new_e_2
+        new_d_3= bottom_right_y + e_2
         
         if self.third == "1":
             self.x = new_a_1 -math.fabs(10*div_scale*math.sin(2*anglerad)) -(25*div_scale)
@@ -186,6 +227,8 @@ class Splitter():
         if self.third == "3":
             self.x = new_a_3 -math.fabs(10*div_scale*math.sin(2*anglerad)) -(25*div_scale)
             self.y = new_d_3 -math.fabs(10*div_scale*math.sin(2*anglerad)) -(25*div_scale)
+        
+
         #changing image
         imageafter = pygame.transform.rotate (self.image,angle)
         imageafter = pygame.transform.scale (imageafter,(scale,scale))
@@ -204,27 +247,12 @@ def ship_creation(): # Builing the image
         if choice == "yes":
             i = len(ship.ship)-1
             print (i)
-            choice = input ("What peice would you like to add?(only have engine and tank rn)")
-            ship.add (choice, ship.ship[i][0])
+            choice = input ("What peice would you like to add?(only have engine, splitter and tank rn)")
+            ship.add (choice)
         elif choice == "no": done = True
         else: print("please say yes or no")
         
-def re_white(): #blanks the area that the ship is in after every draw
-    x_list = []
-    y_list = []
-    for i in range (ship.shiplength):   #finds the limits of the ship
-
-        temp_part_info = ship.ship[i]
-        temp_part = temp_part_info[0]
-        x_list.append(temp_part.imagerect.left)
-        x_list.append(temp_part.imagerect.right)
-        y_list.append(temp_part.imagerect.top)
-        y_list.append(temp_part.imagerect.bottom)
-    screen.fill(WHITE,(min(x_list)-scalemin,
-            min(y_list)-scalemin,max(x_list)+scalemin,max(y_list)+scalemin))
-    print (x_list)
-    print(y_list)
-   
+  
 #Initial order of making stuff
 capsule = Capsule()
 center_of_mass = Center_of_mass()
@@ -232,12 +260,12 @@ ship = Ship()
 ship_creation()
 
 scale = int(scalemin*(math.fabs(0.4*math.sin(2*anglerad))+1)) 
-screen.fill(BLUE)
+screen.fill(WHITE)
 ship.draw()
 
 while True: #MAIN GAME LOOP
     
-    angle = angle +.25 #temp angle changing to test visuals
+    #angle = angle +.05 #temp angle changing to test visuals
     
     anglerad = math.radians(angle)
     if angle == 360:
@@ -246,10 +274,35 @@ while True: #MAIN GAME LOOP
     scale = int(scalemin*(math.fabs(0.4*math.sin(2*anglerad))+1))
     
     for event in pygame.event.get():    #im not completly sure what it does
-        if event.type == pygame.QUIT: sys.exit()#but i think it makes it easier to quit
-        
-    re_white()#blanks area affected
+        if event.type == pygame.QUIT: pygame.quit()#but i think it makes it easier to quit
+
+        if event.type == pygame.MOUSEBUTTONDOWN: #scales the craft up and down with the 
+            if event.button == 4:               #scoll wheel
+                scalemin += 1
+            if event.button == 5:
+                scalemin -=1
+        if event.type == pygame.KEYDOWN:
+            print (event.key)
+            if event.key == "a" and event.key == "d":
+                pass
+            elif event.key == 100:
+                rotateleft = True
+            elif event.key == 97:
+                rotateright = True
+        if event.type == pygame.KEYUP:
+            if event.key == 100:
+                rotateleft = False
+            if event.key == 97:
+                rotateright = False
+    
+    if rotateleft == True:
+        angle -=.5
+    if rotateright == True:
+        angle += .5
+    ship.re_white()#blanks area affected
     ship.draw()# draws and updates the ship
+    ship.update()
+    
     
     
     
