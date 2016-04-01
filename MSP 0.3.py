@@ -1,6 +1,6 @@
 #Michael's space program 
-#Feb 4th 2016
-#Rev 0.2.3
+#Mar 31st 2016
+#Rev 0.3
 #Author: Michael Olson
 
 import math, pygame, sys
@@ -66,7 +66,6 @@ class Ship(): #Overall Ship data and actions
         for i in range (self.shiplength):
             if self.follow_list.count(self.part_list[i]) == 0:
                 if self.part_list[i].third != "2":
-                    
                     self.open_part.append (self.part_list[i])
         print (self.open_part)
 
@@ -92,47 +91,58 @@ class Ship(): #Overall Ship data and actions
 
     def delete(self, instance):
         
-        print ("ship.delete")
-        print (self.shiplength)
         temp_index_list = []
         self.follow_list.clear()
-        print (self.follow_list)
         self.part_list.clear()
         for i in range (self.shiplength):
             self.follow_list.append(self.ship[i][1])
             self.part_list.append(self.ship[i][0])
-        print (self.follow_list)
-        print (self.part_list)
         temp_instance = instance
         
         to_delete_list = []
         
         while self.follow_list.count(temp_instance)!=0:
             
-            print ("self.follow_list.count(temp_instance)",self.follow_list.count(temp_instance))
-            to_delete_list.append(temp_instance)
-            followed_index = self.follow_list.index(temp_instance)
-            print ("followed_index",followed_index)
-            temp_instance = self.ship[followed_index][0]
-            print ("self.follow_list.count(temp_instance)",self.follow_list.count(temp_instance))
-            print ("len(to_delete_list)",len(to_delete_list))
-            print ("temp_instance",temp_instance)
+            
+            if self.follow_list.count(temp_instance)>1:
+                indices = [i for i, x in enumerate(self.follow_list) if x == temp_instance]
+                indices_instances = []
+                
+                for i in range (len(indices)):
+                    indices_instances.append ( self.part_list[indices[i]])
+                
+                
+                for j in range (len(indices) -1):
+                   
+                    ship.delete(indices_instances[-j-1])
+                    self.follow_list.clear()
+                    self.part_list.clear()
+                    for i in range (self.shiplength):
+                        self.follow_list.append(self.ship[i][1])
+                        self.part_list.append(self.ship[i][0])
+            else :         
+                
+                to_delete_list.append(temp_instance)
+                followed_index = self.follow_list.index(temp_instance)
+                
+                temp_instance = self.ship[followed_index][0]
+               
         to_delete_list.append(temp_instance)
-        print (to_delete_list)
-        print (len(to_delete_list))
+        
         for i in range (len(to_delete_list)):
             
-            temp_index_list.append ( self.part_list.index(to_delete_list[i]))
+            temp_index_list.append (self.part_list.index(to_delete_list[i])) 
             
         sorted (temp_index_list)
-        print (temp_index_list)
+        
         for i in range (1,(len(temp_index_list)+1)):
-            print("delete ship")
-            print (temp_index_list[-i])
             del self.ship[temp_index_list[-i]]
         
         to_delete_list.clear()
         self.shiplength = (len(self.ship))
+        
+        screen.fill(WHITE)
+        pygame.display.flip()
         
     def draw(self): #Gathers all ship parts and tells them to draw themsleves
         
@@ -142,6 +152,11 @@ class Ship(): #Overall Ship data and actions
             temp_part = temp_part_info[0]
             temp_follow = temp_part_info[1]
             temp_part.draw(temp_follow)
+##    def thrust(self):
+##        for i in range len(self.shiplength):
+##            if str(type(ship.ship[i][0])) == "<class '__main__.Part'>" and ship.ship[i][0].third == "0":
+##                
+##                
 
     def update(self):
         self.x_list = []
@@ -173,7 +188,7 @@ class Capsule():    #Capsule class
         self.image = pygame.image.load("MSP_capsule.png").convert()
         self.speed = [1,1]
         self.third = "0"
-        self.mass = 100
+        self.mass = 25
     def draw(self,x):
         self.x = x.x
         self.y = x.y
@@ -190,9 +205,20 @@ class Capsule():    #Capsule class
 class Center_of_mass(): #Center of mass, currently stagnent
     def __init__(self):
         self.x = 500
+        self.y = 50
+
+    def manual_move(self):
         self.y = 300
+
+    def centre_of_mass(self):
+        pass
+    def altitude(self):
+        pass
+    def gravity(self):
+        pass
         
 class Part(): #Class for a part attached to botom
+
 
     def __init__(self,part):
         if part == "tank":
@@ -382,6 +408,7 @@ class Start():
         self.side_R2 = pygame.image.load("MSP_split_1.png")
         self.symmetry_img = pygame.image.load("MSP_symmetry.png")
         self.start_img = pygame.image.load("MSP_start.png")
+        self.delete_img = pygame.image.load("MSP_delete.png")
         
         self.tank_rect = self.tank.get_rect()
         self.engine_rect = self.engine.get_rect()
@@ -394,6 +421,7 @@ class Start():
         self.side_R2_rect = self.side_R2.get_rect()
         self.symmetry_img_rect = self.symmetry_img.get_rect()
         self.start_img_rect = self.start_img.get_rect()
+        self.delete_img_rect = self.delete_img.get_rect()
 
         self.symmetry_img_rect = self.symmetry_img_rect.move(50,25)
         self.tank_rect = self.tank_rect.move(75,100)
@@ -406,8 +434,9 @@ class Start():
         self.side_R1_rect = self.side_R1_rect.move(75,400)
         self.side_R2_rect = self.side_R2_rect.move(25,400)
         self.start_img_rect = self.start_img_rect.move(50,475)
+        self.delete_img_rect = self.delete_img_rect.move(50,550)
 
-        self.picked_list = ["tank","engine", "splitter","splitter","splitter","sideR","sideR","sideL","sideL","symmetry","start"]
+        self.picked_list = ["tank","engine", "splitter","splitter","splitter","sideR","sideR","sideL","sideL","symmetry","start","delete"]
     def draw(self):
 
         screen.blit(self.symmetry_img,self.symmetry_img_rect)
@@ -421,7 +450,8 @@ class Start():
         screen.blit(self.side_R1,self.side_R1_rect)
         screen.blit(self.side_R2,self.side_R2_rect)
         screen.blit(self.start_img,self.start_img_rect)
-        pygame.display.update(0,0,200,550)
+        screen.blit(self.delete_img,self.delete_img_rect)
+        pygame.display.update(0,0,200,600)
     def rects(self):
         self.rect_list = []
         self.rect_list.append(self.tank_rect)
@@ -435,12 +465,14 @@ class Start():
         self.rect_list.append(self.side_R2_rect)
         self.rect_list.append(self.symmetry_img_rect)
         self.rect_list.append(self.start_img_rect)
+        self.rect_list.append(self.delete_img_rect)
         
 
 def ship_creation(WHITE): # Building the image
     done = False
     pygame.display.flip()
     symmetry = True
+    delete = False
     
     while done == False:
         ship.re_white()#blanks area affected
@@ -456,21 +488,25 @@ def ship_creation(WHITE): # Building the image
                     try:
                         clicked_on = rect_list[collide]
                    
-                        if collide >= len(rect_list)-11:
-                            if collide== len(rect_list)-2:
+                        if collide >= len(rect_list)-12:
+                            if collide== len(rect_list)-3:
                                 print("symmetry")
                                 symmetry = not symmetry
-                            elif collide== len(rect_list)-1:
+                            elif collide== len(rect_list)-2:
                                 print("start")
                                 done = True
-                    
+                            elif collide == len(rect_list)-1:
+                                delete = True
                             else:
                                 print ("new part")
-                                picked = start.picked_list[collide-(len(rect_list)-11)]
+                                picked = start.picked_list[collide-(len(rect_list)-12)]
                                 if symmetry == True:
                                     ship.add(picked)
                                 
                         else:
+                            if delete == True:
+                                ship.delete (ship.ship[collide][0])
+                                delete = False
                             if symmetry == False:
                                 follow = ship.ship[collide][0]
                                 ship.add_simple (picked,follow)
@@ -506,14 +542,20 @@ def test_mouse_collision():
     return (collide_index,rect_list)
 
 def find_if_engine(collide):
-        #try:
+        try:
             print (type(ship.ship[collide][0]))
             if str(type(ship.ship[collide][0])) == "<class '__main__.Part'>" and ship.ship[collide][0].third == "0":
                 print ("its an engine!")
+                engine_recreator = ship.ship[collide]
                 ship.delete(ship.ship[collide][0])
+                part_class = Part("engine")
+                ship.ship.append((part_class,engine_recreator[1]))
+                ship.shiplength += 1
             
-            
-         #print("not an engine")
+            else:
+                print ("not an engine")
+        except IndexError:
+             print ("not an engine")
         
     
   
@@ -528,9 +570,11 @@ start = Start()
 
 ship_creation(WHITE)
 del start
+center_of_mass.manual_move()
 
 screen.fill(WHITE)
 ship.draw()
+
 
 
 while True: #MAIN GAME LOOP
@@ -547,10 +591,11 @@ while True: #MAIN GAME LOOP
         if event.type == pygame.QUIT: pygame.quit()#but i think it makes it easier to quit
 
         if event.type == pygame.MOUSEBUTTONDOWN: #scales the craft up and down with the 
-            if event.button == 4:               #scoll wheel
+            if event.button == 4:#scoll wheel
                 scalemin += 1
+                
             if event.button == 5:
-                scalemin -=1
+                if scalemin >0:scalemin -=1
             if event.button == 1:
                 local_collide, local_list = test_mouse_collision()
 
@@ -573,9 +618,4 @@ while True: #MAIN GAME LOOP
     ship.re_white()#blanks area affected
     ship.draw()# draws and updates the ship
     ship.update()
-    
-    
-    
-    
-    
     
